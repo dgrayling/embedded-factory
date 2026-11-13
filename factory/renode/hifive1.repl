@@ -1,0 +1,15 @@
+// SiFive HiFive1 as Zephyr's hifive1 board configures it.
+// Renode's sifive-fe310.repl clocks the CLINT (mtime) at 62 MHz, but Zephyr's hifive1 assumes the
+// 32768 Hz RTC clock (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768). Without this override k_msleep()
+// returns ~1900x too early in simulation.
+// led0 = green LED on gpio0 pin 19, GPIO_ACTIVE_LOW (zephyr/boards/sifive/hifive1/hifive1.dts).
+using "platforms/cpus/sifive-fe310.repl"
+
+clint:
+    frequency: 32768
+
+UserLED: Miscellaneous.LED @ gpioInputs
+    invert: true
+
+gpioInputs:
+    19 -> UserLED@0

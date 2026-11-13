@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Runs</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="led" id="conn-led" aria-hidden="true"></span>
+      <strong>Factory Dash</strong>
+      <nav class="nav" aria-label="Views">
+        <a href="/">Overview</a>
+        <a href="/runs" aria-current="page">Runs</a>
+      </nav>
+    </div>
+    <span class="conn" id="conn">connecting…</span>
+  </header>
+
+  <aside class="runs" aria-label="Runs">
+    <div class="runs-head"><span class="label">Runs</span><span class="label" id="run-count"></span></div>
+    <ul id="run-list"></ul>
+  </aside>
+
+  <main id="main">
+    <section class="empty" id="empty" hidden>
+      <h1>No runs yet</h1>
+      <p>Factory Dash watches <code id="runs-root">runs/</code> for <code>events.jsonl</code> files. Start a factory run, or replay the recorded demo:</p>
+      <pre>factory-dash serve --demo</pre>
+      <p>The demo replays a blinky run on STM32F4 Discovery in about a minute. The build fails once and a Renode test fails once before the run passes.</p>
+    </section>
+
+    <div id="run" hidden>
+      <section class="run-head">
+        <div class="titles">
+          <span class="label" id="run-meta"></span>
+          <h1 id="run-title"></h1>
+          <p class="reason" id="run-reason"></p>
+        </div>
+        <span class="status-pill" id="run-status"></span>
+      </section>
+
+      <dl class="stats">
+        <div><dt>Iteration</dt><dd id="st-iter">–</dd></div>
+        <div><dt>Elapsed</dt><dd id="st-elapsed">–</dd></div>
+        <div><dt title="SDK-reported cost at API list prices; on a Claude subscription this is quota used, not a charge">API-equiv. cost</dt><dd id="st-cost">–</dd></div>
+        <div><dt>Tokens in / out</dt><dd id="st-tokens">–</dd></div>
+        <div><dt>Now</dt><dd id="st-active">–</dd></div>
+      </dl>
+
+      <figure class="panel pipeline-panel">
+        <div class="scroll"><svg id="pipeline" viewBox="0 0 960 484" role="img" aria-label="Pipeline state"></svg></div>
+        <figcaption>
+          <span class="key"><i class="sw idle"></i>not run</span>
+          <span class="key"><i class="sw running"></i>running</span>
+          <span class="key"><i class="sw pass"></i>passed</span>
+          <span class="key"><i class="sw fail"></i>failed</span>
+          <span class="key"><i class="sw stale"></i>earlier iteration</span>
+          <span class="hint">Click a step to inspect it.</span>
+        </figcaption>
+      </figure>
+
+      <div class="cols">
+        <section class="panel timeline-panel" aria-labelledby="h-tl">
+          <div class="panel-head">
+            <h2 id="h-tl">Timeline</h2>
+            <button type="button" id="tl-filter-clear" class="chip" hidden></button>
+          </div>
+          <ol id="timeline"></ol>
+        </section>
+
+        <div class="side">
+          <section class="panel" aria-labelledby="h-insp">
+            <div class="panel-head"><h2 id="h-insp">Inspector</h2><span class="label" id="insp-node"></span></div>
+            <div id="inspector"><p class="muted">Select a step in the pipeline.</p></div>
+          </section>
+          <section class="panel" aria-labelledby="h-cost">
+            <div class="panel-head"><h2 id="h-cost" title="SDK-reported cost at API list prices; on a Claude subscription this is quota used, not a charge">API-equivalent cost by persona</h2></div>
+            <div id="costs"></div>
+          </section>
+          <section class="panel" aria-labelledby="h-art">
+            <div class="panel-head"><h2 id="h-art">Artifacts</h2></div>
+            <ul id="artifacts" class="artifacts"></ul>
+          </section>
+          <section class="panel" aria-labelledby="h-board">
+            <div class="panel-head"><h2 id="h-board">Board</h2><span class="label" id="board-id"></span></div>
+            <div id="board"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

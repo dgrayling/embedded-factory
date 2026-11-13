@@ -1,0 +1,14 @@
+// STM32F4 Discovery as Zephyr configures it.
+// Renode's stock stm32f4.repl clocks SysTick at 72 MHz, but Zephyr's stm32f4_disco
+// board runs the core (and SysTick) at 168 MHz (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
+// Without this override every k_msleep() runs 168/72 = 2.33x too slow in simulation.
+using "platforms/boards/stm32f4_discovery-kit.repl"
+
+nvic:
+    systickFrequency: 168000000
+
+// Renode's stm32f4.repl first wires every gpioPortX pin N to exti@N, then later re-declares
+// gpioPortA pin 0 as "-> timer2@00 | timer5@00", which replaces the EXTI connection. PA0 is the
+// Discovery user button (sw0), so without this line button interrupts never fire.
+gpioPortA:
+    0 -> exti@0 | timer2@00 | timer5@00

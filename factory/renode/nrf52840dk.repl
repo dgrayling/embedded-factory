@@ -1,0 +1,16 @@
+// nRF52840 DK as Zephyr's nrf52840dk/nrf52840 board configures it.
+// Zephyr's system timer is RTC1 at 32768 Hz (LFCLK), which Renode's NRF52840_RTC models natively,
+// so no clock override is needed. Renode has no DK board file, so wire LED1 and Button 1 here,
+// matching zephyr/boards/nordic/nrf52840dk/nrf52840dk_nrf52840.dts:
+//   led0 = P0.13, GPIO_ACTIVE_LOW;  sw0 = P0.11, GPIO_ACTIVE_LOW | GPIO_PULL_UP
+using "platforms/cpus/nrf52840.repl"
+
+UserLED: Miscellaneous.LED @ gpio0
+    invert: true
+
+UserButton: Miscellaneous.Button @ gpio0
+    invert: true
+    -> gpio0@11
+
+gpio0:
+    13 -> UserLED@0

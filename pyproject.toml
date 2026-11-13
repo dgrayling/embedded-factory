@@ -1,0 +1,28 @@
+[project]
+name = "embedded-factory"
+version = "0.1.0"
+description = "Multi-persona LLM factory that produces Zephyr firmware verified in Renode"
+requires-python = ">=3.11"
+dependencies = [
+    "claude-agent-sdk",
+    "pydantic>=2",
+    "pyyaml",
+    "typer",
+    "rich",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+factory = "factory.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["factory*"]
+
+[tool.setuptools.package-data]
+factory = ["boards.yaml", "personas/prompts/*.md"]

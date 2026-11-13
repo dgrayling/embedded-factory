@@ -1,0 +1,47 @@
+[
+  {
+    "spec": "01_blinky.md",
+    "ok": true,
+    "reason": "all gates green after 1 iteration",
+    "iterations": 1,
+    "cost_usd": 0.9606,
+    "minutes": 5.1,
+    "run": "20261112-154009-bench-01_blinky-stm32f4_disco"
+  },
+  {
+    "spec": "02_button_toggle.md",
+    "ok": true,
+    "reason": "all gates green after 1 iteration",
+    "iterations": 1,
+    "cost_usd": 1.3296,
+    "minutes": 6.1,
+    "run": "20261112-154516-bench-02_button_toggle-stm32f4_disco"
+  },
+  {
+    "spec": "03_uart_command_shell.md",
+    "ok": true,
+    "reason": "all gates green after 1 iteration",
+    "iterations": 1,
+    "cost_usd": 1.7863,
+    "minutes": 8.7,
+    "run": "20261112-155122-bench-03_uart_command_shell-stm32f4_disc"
+  },
+  {
+    "spec": "04_heartbeat_pattern.md",
+    "ok": false,
+    "reason": "escalated: debugger attributes the failure to the test twice: The bug is in the locked test, not the firmware, and it comes from requirements.yaml. The REQ-3 acceptance line expects 'off' at 1250 ms. The REQ-3 text says the LED is on for [200,300) ms, wrapping m",
+    "iterations": 2,
+    "cost_usd": 1.8958,
+    "minutes": 8.7,
+    "run": "20261112-160006-bench-04_heartbeat_pattern-stm32f4_disco"
+  },
+  {
+    "spec": "05_traffic_light_fsm.md",
+    "ok": true,
+    "reason": "all gates green after 1 iteration",
+    "iterations": 1,
+    "cost_usd": 1.5479,
+    "minutes": 7.0,
+    "run": "20261112-160846-bench-05_traffic_light_fsm-stm32f4_disco"
+  }
+]

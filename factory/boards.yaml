@@ -1,0 +1,79 @@
+# Board registry: maps factory board ids to Zephyr targets and Renode platforms.
+# `sim` lists what the Renode model covers well enough to write behavioural tests against.
+# Personas (Architect, Test Engineer) read this so they never rely on unmodelled hardware.
+
+stm32f4_disco:
+  name: STM32F4 Discovery
+  arch: arm-cortex-m4
+  memory: {flash_bytes: 1048576, ram_bytes: 131072}
+  zephyr_board: stm32f4_disco
+  # Overlay fixes Renode's 72 MHz SysTick to the 168 MHz Zephyr assumes (see the .repl).
+  renode_platform: "@/work/factory/renode/stm32f4_disco.repl"
+  console_uart: sysbus.usart2
+  leds:
+    led0: sysbus.gpioPortD.UserLED
+  buttons:
+    sw0: sysbus.gpioPortA.UserButton
+  sim:
+    supported: [uart, gpio, led, button, timers, systick]
+    partial: [i2c, spi, adc]
+    unsupported: [usb, ethernet, dma2d]
+  status: primary
+
+nrf52840dk:
+  name: Nordic nRF52840 DK
+  arch: arm-cortex-m4
+  memory: {flash_bytes: 1048576, ram_bytes: 262144}
+  zephyr_board: nrf52840dk/nrf52840
+  # Overlay wires LED1 (P0.13) and Button 1 (P0.11), both active-low, per the Zephyr DTS.
+  renode_platform: "@/work/factory/renode/nrf52840dk.repl"
+  console_uart: sysbus.uart0
+  leds:
+    led0: sysbus.gpio0.UserLED
+  buttons:
+    sw0: sysbus.gpio0.UserButton
+  sim_quirks:
+    - >-
+      Button: Renode's nRF52840 GPIO model ignores the input level while the pin's input buffer is
+      disconnected (the reset state) and does not re-read it when the firmware configures the pin.
+      As a result the FIRST button press after boot produces no edge. In Robot tests, after the
+      firmware has booted and before the first real press, prime the button once with
+      `Execute Command  ${BUTTON} Press` then `Execute Command  ${BUTTON} Release` (with a short
+      emulation step between them). The prime press itself is not seen by the firmware.
+  sim:
+    supported: [uart, gpio, timers, rtc]
+    partial: [i2c, spi, radio]
+    unsupported: [usb, nfc]
+  status: supported
+
+hifive1:
+  name: SiFive HiFive1
+  arch: riscv32
+  memory: {flash_bytes: 12582912, ram_bytes: 16384}   # only 16 KiB of RAM
+  zephyr_board: hifive1
+  # Overlay fixes CLINT 62 MHz -> 32768 Hz (Zephyr's mtime clock) and wires the green LED (pin 19).
+  renode_platform: "@/work/factory/renode/hifive1.repl"
+  console_uart: sysbus.uart0
+  leds:
+    led0: sysbus.gpioInputs.UserLED
+  buttons: {}   # the HiFive1 has no user button
+  sim:
+    supported: [uart, gpio, timers]
+    partial: [spi]
+    unsupported: [pwm, button]
+  status: supported
+
+rpi_pico:
+  name: Raspberry Pi Pico (RP2040)
+  arch: arm-cortex-m0plus
+  memory: {flash_bytes: 2096896, ram_bytes: 270336}
+  zephyr_board: rpi_pico/rp2040
+  renode_platform: null   # Renode 1.17 ships no RP2040 model (checked); build-only until one exists
+  console_uart: null
+  leds: {}
+  buttons: {}
+  sim:
+    supported: []
+    partial: []
+    unsupported: [all]
+  status: build-only   # G1-G3 run; G4/G5 are skipped and reported as such

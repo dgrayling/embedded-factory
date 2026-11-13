@@ -1,0 +1,13 @@
+[
+  {
+    "spec": "04_heartbeat_pattern.md",
+    "ok": true,
+    "reason": "all gates green after 1 iteration",
+    "iterations": 1,
+    "cost_usd": 2.099,
+    "input_tokens": 672998,
+    "output_tokens": 48898,
+    "minutes": 10.2,
+    "run": "20261112-204521-bench-04_heartbeat_pattern-stm32f4_disco"
+  }
+]

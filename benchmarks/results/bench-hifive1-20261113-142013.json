@@ -1,0 +1,13 @@
+[
+  {
+    "spec": "01_blinky.md",
+    "ok": true,
+    "reason": "all gates green after 1 iteration",
+    "iterations": 1,
+    "cost_usd": 0.8397,
+    "input_tokens": 221849,
+    "output_tokens": 16293,
+    "minutes": 4.0,
+    "run": "20261113-141611-bench-01_blinky-hifive1"
+  }
+]

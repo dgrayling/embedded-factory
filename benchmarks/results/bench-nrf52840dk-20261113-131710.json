@@ -1,0 +1,13 @@
+[
+  {
+    "spec": "02_button_toggle.md",
+    "ok": true,
+    "reason": "all gates green after 1 iteration",
+    "iterations": 1,
+    "cost_usd": 1.0477,
+    "input_tokens": 249239,
+    "output_tokens": 21845,
+    "minutes": 4.6,
+    "run": "20261113-131234-bench-02_button_toggle-nrf52840dk"
+  }
+]

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Overview</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/overview.css">
+</head>
+<body>
+<div class="ov-app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="led" id="conn-led" aria-hidden="true"></span>
+      <strong>Factory Dash</strong>
+      <nav class="nav" aria-label="Views">
+        <a href="/" aria-current="page">Overview</a>
+        <a href="/runs">Runs</a>
+      </nav>
+    </div>
+    <div class="top-right">
+      <span class="conn" id="conn">connecting…</span>
+      <span class="clock mono" id="clock"></span>
+    </div>
+  </header>
+
+  <main class="ov">
+    <section class="hero" aria-live="polite">
+      <div class="hero-text">
+        <span class="label">Factory status</span>
+        <h1 id="hero-title">Loading…</h1>
+        <p class="hero-sub" id="hero-sub"></p>
+      </div>
+      <span class="status-pill" id="hero-pill"></span>
+    </section>
+
+    <dl class="stats kpis" id="kpis">
+      <div><dt>In progress</dt><dd id="k-active">–</dd></div>
+      <div><dt title="Unfinished runs with no new event for longer than the stall threshold">Stalled</dt><dd id="k-stalled">–</dd></div>
+      <div><dt>Finished, 24h</dt><dd id="k-24h">–</dd></div>
+      <div><dt title="Finished new/change pipeline runs that passed; gate-only checks excluded">Pass rate</dt><dd id="k-rate">–</dd></div>
+      <div><dt title="Median start-to-finish time of finished runs">Median run</dt><dd id="k-dur">–</dd></div>
+      <div><dt title="SDK-reported cost at API list prices; on a Claude subscription this is quota used, not a charge">API-equiv., 24h</dt><dd id="k-cost">–</dd></div>
+      <div><dt>Tokens, 24h</dt><dd id="k-tok">–</dd></div>
+    </dl>
+
+    <section aria-labelledby="h-floor" class="floor">
+      <div class="section-head">
+        <h2 id="h-floor">On the floor now</h2>
+        <span class="label" id="floor-count"></span>
+      </div>
+      <div id="floor" class="cards"></div>
+    </section>
+
+    <div class="ov-cols">
+      <section class="panel feed-panel" aria-labelledby="h-feed">
+        <div class="panel-head">
+          <h2 id="h-feed">Live activity</h2>
+          <div class="feed-ctl">
+            <button type="button" id="feed-run" class="chip" hidden></button>
+            <label class="toggle"><input type="checkbox" id="feed-tools"> tool calls</label>
+          </div>
+        </div>
+        <ol id="feed" class="feed"></ol>
+      </section>
+
+      <div class="side">
+        <section class="panel" aria-labelledby="h-personas">
+          <div class="panel-head"><h2 id="h-personas">Personas</h2><span class="label">all runs</span></div>
+          <div class="table-wrap"><table class="grid" id="personas"></table></div>
+        </section>
+        <section class="panel" aria-labelledby="h-boards">
+          <div class="panel-head"><h2 id="h-boards">Boards</h2></div>
+          <ul id="boards" class="lanes"></ul>
+        </section>
+      </div>
+    </div>
+
+    <div class="ov-cols even">
+      <section class="panel" aria-labelledby="h-thru">
+        <div class="panel-head">
+          <h2 id="h-thru">Pipeline runs finished per day</h2>
+          <span class="legend"><span class="key"><i class="sq ok"></i>passed</span><span class="key"><i class="sq fail"></i>failed</span></span>
+        </div>
+        <div class="chart-wrap" id="thru-wrap">
+          <svg id="thru" role="img" aria-label="Pipeline runs finished per day, last 14 days"></svg>
+          <div class="tip" id="thru-tip" hidden></div>
+        </div>
+        <details class="as-table"><summary>Show as table</summary><div class="table-wrap"><table class="grid" id="thru-table"></table></div></details>
+      </section>
+
+      <section class="panel" aria-labelledby="h-gates">
+        <div class="panel-head">
+          <h2 id="h-gates">Gate health</h2>
+          <span class="label" title="Share of runs whose first evaluation of the gate passed">first-try pass rate</span>
+        </div>
+        <div id="gates" class="bars"></div>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="h-recent">
+      <div class="panel-head"><h2 id="h-recent">Recent results</h2><a class="label link" href="/runs">all runs →</a></div>
+      <div class="table-wrap"><table class="grid recent" id="recent"></table></div>
+    </section>
+  </main>
+</div>
+<script src="/overview.js"></script>
+</body>
+</html>
