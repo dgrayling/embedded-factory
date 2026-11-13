@@ -4,7 +4,7 @@ BOARD ?= stm32f4_disco
 APP   ?= templates/zephyr-app
 BUILD ?= build/smoke-$(subst /,_,$(BOARD))
 
-.PHONY: image workspace shell smoke-build sim-smoke gates dash dash-demo test clean
+.PHONY: image workspace shell smoke-build sim-smoke gates dash dash-demo test clean clean-runs
 
 ## Build the toolchain image (Zephyr SDK + Renode + analysers)
 image:
@@ -45,3 +45,7 @@ test:
 
 clean:
 	rm -rf build
+
+## Remove regenerable build trees from finished runs (keeps logs, reports, workspaces)
+clean-runs:
+	.venv/bin/factory clean

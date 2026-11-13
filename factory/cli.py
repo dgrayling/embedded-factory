@@ -4,6 +4,7 @@
   factory change --repo PATH --request cr.md --board ...   change request on an existing repo
   factory bench  [--specs benchmarks/specs] --board ...    run a spec suite, summarise results
   factory gates  --board ... [--app DIR]                   deterministic gates only (no LLM)
+  factory clean  [--older-than DAYS] [--runs] [--dry-run]   free disk space under runs/
 """
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ from pathlib import Path
 
 import typer
 
+from factory import housekeeping
 from factory.events import EventLog
 from factory.gates import run_gates
 from factory.pipeline import Pipeline, RunOutcome, new_run_dir
@@ -163,6 +165,30 @@ def gates(
         typer.echo(rep.feedback())
     log.run_finished(rep.ok, "all gates green" if rep.ok else "gate failures")
     raise typer.Exit(0 if rep.ok else 1)
+
+
+@app.command()
+def clean(
+    older_than: float = typer.Option(0, help="Only touch runs whose last event is at least this many days old"),
+    runs: bool = typer.Option(False, "--runs", help="Delete whole run directories, not just build trees"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="List what would be removed and stop"),
+    root: Path = typer.Option(REPO_ROOT / "runs", hidden=True),
+) -> None:
+    """Free disk space under runs/. By default removes only the regenerable build trees (ws/build*),
+    keeping logs, ledgers, reports and workspaces. Runs that may still be in progress are skipped."""
+    targets, skipped = housekeeping.plan(root, older_than_days=older_than, whole_runs=runs)
+    for name in skipped:
+        typer.echo(f"skip   {name} (no run_finished, active in the last hour)")
+    for t in targets:
+        typer.echo(f"{'would remove' if dry_run else 'remove'}  {t.path.relative_to(root)}  ({housekeeping.human(t.bytes)})")
+    total = sum(t.bytes for t in targets)
+    if not targets:
+        typer.echo("nothing to remove")
+    elif dry_run:
+        typer.echo(f"{len(targets)} item(s), {housekeeping.human(total)} would be freed")
+    else:
+        freed = housekeeping.remove(targets, root)
+        typer.echo(f"freed {housekeeping.human(freed)} from {len(targets)} item(s)")
 
 
 if __name__ == "__main__":

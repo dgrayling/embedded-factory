@@ -52,7 +52,13 @@ factory change --repo benchmarks/repos/zephyr-blinky \
                --request benchmarks/changes/blinky_add_button_pause.md --board stm32f4_disco
 factory bench  --board stm32f4_disco [--only 01,02]   # writes benchmarks/results/bench-*.md
 factory gates  --board nrf52840dk --app path/to/app    # gates only, no model calls
+factory clean  [--older-than 7] [--runs] [--dry-run]  # free disk space under runs/
 ```
+
+`factory clean` (or `make clean-runs`) removes only the regenerable build trees (`ws/build*`) by
+default, so logs, ledgers, reports and workspaces stay and the dashboard still shows every run.
+`--runs` deletes whole run directories instead. A run with no `run_finished` that was active in the
+last hour is always skipped.
 
 Each run gets `runs/<timestamp>-<slug>/` with `events.jsonl` (what the dashboard shows),
 `ledger.jsonl` (tokens and cost per persona call), `report.md` and the workspace `ws/`. The workspace is a
