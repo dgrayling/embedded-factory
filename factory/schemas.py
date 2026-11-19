@@ -48,10 +48,33 @@ class RobotTest(BaseModel):
     message: str = ""
 
 
+class SimEvent(BaseModel):
+    """One observable change on the simulated board, at `t` seconds of virtual time since the
+    tracer attached. led/button: value 1 = on/pressed, 0 = off/released. uart: value is one line."""
+    t: float
+    kind: Literal["led", "button", "uart"]
+    id: str
+    value: int | str
+
+
+class SimClip(BaseModel):
+    """What the board did during one Robot test, for replay in the dashboard."""
+    suite: str
+    test: str
+    passed: bool
+    message: str = ""
+    duration: float = 0.0
+    events: list[SimEvent] = Field(default_factory=list)
+    truncated: bool = False
+    errors: list[str] = Field(default_factory=list)
+
+
 class SimResult(BaseModel):
     ok: bool
     tests: list[RobotTest]
     log_tail: str = ""
+    # Replay traces for the dashboard. Not shown to personas (see tools/mcp.py).
+    clips: list[SimClip] = Field(default_factory=list)
 
     @property
     def failed(self) -> list[RobotTest]:

@@ -6,17 +6,19 @@ optional ztest app at ``tests/ztest`` (its own CMakeLists.txt / prj.conf).
 """
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
 from factory.schemas import BuildResult, Diagnostic, MemRegion, SimResult, SizeResult
 from factory.tools.board import board_info
-from factory.tools.container import Toolchain, q
+from factory.tools.container import REPO_ROOT, Toolchain, q
 from factory.tools.parsers import (
-    parse_gcc_diagnostics, parse_memory_report, parse_robot_output, parse_ztest_output,
+    parse_gcc_diagnostics, parse_memory_report, parse_robot_output, parse_sim_trace, parse_ztest_output,
 )
 
 LOG_TAIL = 4000
+SIMTRACE_LISTENER = REPO_ROOT / "factory" / "renode" / "simtrace_listener.py"
 REGION_ALIASES = {"FLASH": ("ROM", "rom", "FLASH_CODE")}
 
 
@@ -143,6 +145,13 @@ def robot_board_vars(board: str) -> str:
     return "".join(f"--variable {q(k + ':' + v)} " for k, v in pairs.items() if v)
 
 
+def simtrace_spec(board: str) -> dict:
+    """Which peripherals the simulation tracer records: the board's console UART, LEDs and buttons."""
+    info = board_info(board)
+    return {"uart": info.get("console_uart"), "leds": dict(info.get("leds") or {}),
+            "buttons": dict(info.get("buttons") or {})}
+
+
 def simulate(tc: Toolchain, app_dir: Path, suite: Path, board: str, timeout: float = 600) -> SimResult:
     app = tc.to_container(app_dir)
     # renode-test 1.17 writes robot_output.xml, logs/ and snapshots/ into its cwd (it does not
@@ -151,15 +160,23 @@ def simulate(tc: Toolchain, app_dir: Path, suite: Path, board: str, timeout: flo
     if host_out.exists():
         shutil.rmtree(host_out)
     host_out.mkdir(parents=True)
+    # The tracer listener records LED/button/UART activity per test for the dashboard's replay.
+    # It only observes: it cannot change a test's outcome.
+    trace_dir = host_out / "simtrace"
+    trace_dir.mkdir()
+    (trace_dir / "spec.json").write_text(json.dumps(simtrace_spec(board)))
+    listener = f"{tc.to_container(SIMTRACE_LISTENER)}:{tc.to_container(trace_dir)}"
     res = tc.exec(
-        f"cd {q(app + '/build/robot')} && renode-test --variable {q('ELF:' + app + '/build/zephyr/zephyr.elf')} "
+        f"cd {q(app + '/build/robot')} && renode-test --listener {q(listener)} "
+        f"--variable {q('ELF:' + app + '/build/zephyr/zephyr.elf')} "
         f"{robot_board_vars(board)}{q(tc.to_container(suite))}",
         timeout=timeout,
     )
     xml_path = host_out / "robot_output.xml"
     tests = parse_robot_output(xml_path.read_text()) if xml_path.exists() else []
     ok = res.ok and bool(tests) and all(t.passed for t in tests)
-    return SimResult(ok=ok, tests=tests, log_tail="" if ok else _tail(res.output))
+    return SimResult(ok=ok, tests=tests, log_tail="" if ok else _tail(res.output),
+                     clips=parse_sim_trace(trace_dir, suite.stem))
 
 
 def simulate_all(tc: Toolchain, app_dir: Path, board: str) -> SimResult | None:
@@ -167,11 +184,12 @@ def simulate_all(tc: Toolchain, app_dir: Path, board: str) -> SimResult | None:
     suites = sorted((Path(app_dir) / "tests" / "robot").glob("*.robot"))
     if not suites:
         return None
-    tests, tails, ok = [], [], True
+    tests, tails, clips, ok = [], [], [], True
     for s in suites:
         r = simulate(tc, app_dir, s, board)
         tests += r.tests
+        clips += r.clips
         ok &= r.ok
         if r.log_tail:
             tails.append(f"[{s.name}]\n{r.log_tail[-1500:]}")
-    return SimResult(ok=ok, tests=tests, log_tail="\n".join(tails))
+    return SimResult(ok=ok, tests=tests, log_tail="\n".join(tails), clips=clips)

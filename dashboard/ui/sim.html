@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Sim</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/sim.css">
+<script type="importmap">{ "imports": { "three": "/vendor/three.module.min.js", "three/addons/": "/vendor/" } }</script>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="led" id="conn-led" aria-hidden="true"></span>
+      <strong>Factory Dash</strong>
+      <nav class="nav" aria-label="Views">
+        <a href="/">Overview</a>
+        <a href="/runs">Runs</a>
+        <a href="/sim" aria-current="page">Sim</a>
+      </nav>
+    </div>
+    <span class="conn" id="conn">connecting…</span>
+  </header>
+
+  <aside class="runs" aria-label="Runs with simulation recordings">
+    <div class="runs-head"><span class="label">Recorded runs</span><span class="label" id="run-count"></span></div>
+    <ul id="run-list"></ul>
+  </aside>
+
+  <main id="main">
+    <section class="empty" id="empty" hidden>
+      <h1>No simulation recordings yet</h1>
+      <p>Every G5 run records what the simulated board did during each Robot test: LED and button changes and console output, all in Renode virtual time. Recordings show up here as soon as a G5 gate finishes.</p>
+      <p>Record one from any app, or replay the demo run:</p>
+      <pre>factory gates --board stm32f4_disco --app templates/zephyr-app
+factory-dash serve --demo</pre>
+    </section>
+
+    <div id="sim" hidden>
+      <section class="run-head">
+        <div class="titles">
+          <span class="label" id="run-meta"></span>
+          <h1 id="run-title"></h1>
+        </div>
+        <div class="traces" id="traces" role="tablist" aria-label="Recordings in this run"></div>
+      </section>
+
+      <section class="stage-wrap panel" aria-label="3D board replay">
+        <div class="stage" id="stage">
+          <canvas id="scene" aria-label="Simulated board, 3D view"></canvas>
+          <div class="labels" id="labels" aria-hidden="true"></div>
+          <div class="hud tl">
+            <span class="label" id="hud-board"></span>
+            <strong id="hud-test"></strong>
+            <span class="hud-msg" id="hud-msg"></span>
+          </div>
+          <div class="hud tr">
+            <span class="label">virtual time</span>
+            <span class="vt" id="hud-time">0.000 s</span>
+          </div>
+          <div class="hud bl"><span class="label">drag to orbit · scroll to zoom · space to play</span></div>
+          <div class="waiting" id="waiting" hidden>
+            <span class="dot running"></span><span id="waiting-text">Waiting for G5 to record this run…</span>
+          </div>
+        </div>
+
+        <div class="transport">
+          <button type="button" class="tbtn" id="btn-prev" title="Previous test ( [ )" aria-label="Previous test">⏮</button>
+          <button type="button" class="tbtn play" id="btn-play" title="Play / pause (space)" aria-label="Play">▶</button>
+          <button type="button" class="tbtn" id="btn-next" title="Next test ( ] )" aria-label="Next test">⏭</button>
+          <label class="sel"><span class="label">speed</span>
+            <select id="speed">
+              <option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option>
+            </select>
+          </label>
+          <label class="toggle"><input type="checkbox" id="autoplay" checked> <span>play all tests</span></label>
+          <label class="toggle"><input type="checkbox" id="follow" checked> <span>follow new recordings</span></label>
+          <span class="tpos label" id="tpos"></span>
+        </div>
+        <svg id="wave" class="wave" role="img" aria-label="Signal timeline: click or drag to seek"></svg>
+      </section>
+
+      <div class="sim-cols">
+        <section class="panel" aria-labelledby="h-clips">
+          <div class="panel-head"><h2 id="h-clips">Tests</h2><span class="label" id="clip-count"></span></div>
+          <ol id="clips" class="clips"></ol>
+        </section>
+        <section class="panel" aria-labelledby="h-uart">
+          <div class="panel-head"><h2 id="h-uart">Console</h2><span class="label" id="uart-id"></span></div>
+          <ol id="uart" class="uart" aria-live="off"></ol>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<script type="module" src="/sim.js"></script>
+</body>
+</html>

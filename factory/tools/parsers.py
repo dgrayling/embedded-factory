@@ -1,10 +1,12 @@
 """Pure parsers for toolchain output. No container or LLM dependencies, so fully unit-testable."""
 from __future__ import annotations
 
+import json
 import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
-from factory.schemas import Diagnostic, MemRegion, RobotTest
+from factory.schemas import Diagnostic, MemRegion, RobotTest, SimClip, SimEvent
 
 _GCC_RE = re.compile(
     r"^(?P<file>[^:\s][^:]*):(?P<line>\d+):(?:(?P<col>\d+):)?\s*"
@@ -139,3 +141,78 @@ def parse_ztest_output(text: str) -> tuple[list[RobotTest], str]:
     else:
         verdict = "incomplete"
     return cases, verdict
+
+
+MAX_CLIP_EVENTS = 3000
+MAX_UART_LINE = 240
+
+
+def parse_sim_trace(trace_dir: Path, suite: str) -> list[SimClip]:
+    """Turn the simulation tracer's output (factory/renode/simtrace_listener.py) into clips.
+
+    Times are rebased to the moment the tracer attached. Console bytes are joined into lines,
+    each stamped with the time its newline was sent. Malformed lines are skipped: a damaged trace
+    loses detail but never breaks the gate that produced it."""
+    trace_dir = Path(trace_dir)
+    try:
+        index = json.loads((trace_dir / "index.json").read_text())
+    except (OSError, ValueError):
+        return []
+    clips = []
+    for entry in index if isinstance(index, list) else []:
+        if not isinstance(entry, dict):
+            continue
+        clip = SimClip(suite=suite, test=str(entry.get("name", "")), passed=bool(entry.get("passed")),
+                       message=str(entry.get("message", ""))[:500])
+        path = trace_dir / f"{entry.get('n')}.jsonl"
+        if entry.get("traced") and path.is_file():
+            _fill_clip(clip, path.read_text(errors="replace").splitlines())
+        clips.append(clip)
+    return clips
+
+
+def _fill_clip(clip: SimClip, lines: list[str]) -> None:
+    t0: float | None = None
+    end = last = last_tx = 0.0
+    line_buf = bytearray()
+
+    def add(t: float, kind: str, ident: str, value) -> None:
+        if len(clip.events) >= MAX_CLIP_EVENTS:
+            clip.truncated = True
+            return
+        clip.events.append(SimEvent(t=round(t, 6), kind=kind, id=ident, value=value))
+
+    def flush_uart(t: float) -> None:
+        text = line_buf.decode("utf-8", errors="replace").rstrip("\r")
+        line_buf.clear()
+        add(t, "uart", "uart", text[:MAX_UART_LINE])
+
+    for raw in lines:
+        try:
+            rec = json.loads(raw)
+            k, t = rec.get("k"), rec.get("t")
+        except (ValueError, AttributeError):
+            continue
+        if k == "error":
+            clip.errors.append(str(rec.get("msg", ""))[:300])
+            continue
+        if not isinstance(t, (int, float)):
+            continue
+        if t0 is None:
+            t0 = float(t)
+        t = max(0.0, float(t) - t0)
+        last = max(last, t)
+        if k == "end":
+            end = t
+        elif k in ("led", "button") and isinstance(rec.get("id"), str):
+            add(t, k, rec["id"], 1 if rec.get("v") else 0)
+        elif k == "tx" and isinstance(rec.get("c"), int):
+            c = rec["c"] & 0xFF
+            last_tx = t
+            if c == 0x0A:
+                flush_uart(t)
+            elif len(line_buf) < MAX_UART_LINE * 4:
+                line_buf.append(c)
+    if line_buf:
+        flush_uart(last_tx)
+    clip.duration = round(max(end, last), 6)

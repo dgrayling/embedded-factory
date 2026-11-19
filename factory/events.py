@@ -20,6 +20,7 @@ SCHEMA: dict[str, tuple[str, ...]] = {
     "note": ("stage", "text"),
     "artifact_written": ("stage", "path"),
     "run_finished": ("ok",),
+    "sim_trace": ("gate", "board", "clips"),
 }
 
 STAGES = {
@@ -40,8 +41,10 @@ def validate(event: dict[str, Any]) -> None:
         raise ValueError(f"{t}: missing fields {missing}")
     if "stage" in event and event["stage"] not in STAGES:
         raise ValueError(f"{t}: unknown stage {event['stage']!r}")
-    if t == "gate_result" and str(event["gate"]).lower() not in GATES:
-        raise ValueError(f"gate_result: unknown gate {event['gate']!r}")
+    if t in ("gate_result", "sim_trace") and str(event["gate"]).lower() not in GATES:
+        raise ValueError(f"{t}: unknown gate {event['gate']!r}")
+    if t == "sim_trace" and not isinstance(event["clips"], list):
+        raise ValueError("sim_trace: clips must be a list")
 
 
 class EventLog:
@@ -82,6 +85,10 @@ class EventLog:
 
     def artifact(self, stage: str, path: str):
         return self.emit("artifact_written", stage=stage, path=path)
+
+    def sim_trace(self, gate: str, board: str, clips: list, iteration: int = 0):
+        """Per-test recordings of the simulated board (LEDs, buttons, console) for 3D replay."""
+        return self.emit("sim_trace", gate=gate, board=board, iteration=iteration, clips=clips)
 
     def run_finished(self, ok: bool, reason: str = ""):
         return self.emit("run_finished", ok=ok, reason=reason)

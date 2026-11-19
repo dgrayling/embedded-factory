@@ -58,6 +58,7 @@ pub struct RunSummary {
     pub started_ts: Option<f64>,
     pub last_ts: Option<f64>,
     pub cost_usd: f64,
+    pub sim_traces: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -106,6 +107,7 @@ impl Store {
                     started_ts: s.started_ts,
                     last_ts: s.last_ts,
                     cost_usd: s.usage.cost_usd,
+                    sim_traces: s.sim_traces,
                 }
             })
             .collect();

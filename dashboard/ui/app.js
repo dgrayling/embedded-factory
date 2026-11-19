@@ -312,6 +312,9 @@
     </dl>`;
     if (st.summary) html += `<p style="margin:0">${esc(st.summary)}</p>`;
     html += renderDetail(st.detail);
+    if (selectedNode === "g5" && snap.sim_traces) {
+      html += `<p style="margin:0"><a href="/sim#${encodeURIComponent(selectedRun)}">Replay on the 3D board →</a></p>`;
+    }
     const notes = events.filter((e) => e.type === "note" && e.stage === selectedNode);
     if (notes.length) html += `<h3>Latest note</h3><p class="muted" style="font-style:italic">${esc(notes[notes.length - 1].text)}</p>`;
     box.innerHTML = html;

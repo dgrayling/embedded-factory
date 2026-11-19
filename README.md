@@ -37,6 +37,20 @@ make test         # pytest + cargo test
   all runs, persona load (who is busy, sessions, wall time, cost), board lanes, pipeline runs finished
   per day, first-try pass rate per gate, and recent results.
 - **Runs** (`/runs#<run-id>`): the per-run inspector, with the pipeline graph, timeline and gate detail.
+- **Sim** (`/sim#<run-id>`): a 3D replay of what the simulated board did during each G5 Robot test.
+  LEDs light, buttons press and console lines appear on a model of the board, in Renode virtual time,
+  with a logic-analyzer timeline you can scrub and the console output synced to the playhead.
+  The page follows the selected run live and plays each new recording as soon as G5 finishes.
+
+**How recordings are made.** G5 runs `renode-test` with a Robot listener
+(`factory/renode/simtrace_listener.py`). At the start of each test it injects a Renode hook
+(`simtrace_hook.py`) that subscribes to the board's LED, button and console UART peripherals (the
+paths in `factory/boards.yaml`) and stamps each change with the machine's virtual time. The listener
+only observes: hook errors are written to the trace, never raised, so a recording can't change a
+verdict. Both files live in `factory/`, which the toolchain container mounts read-only, so personas
+can't edit them. G5 then emits a `sim_trace` event with one clip per test (capped at 3000 events per clip
+and 60 clips per event). Personas calling the `simulate` tool get the same results without the clips.
+To record an existing app: `factory gates --board <board> --app <dir>`.
 
 A run with no `run_finished` that has been silent longer than `--stall-after` seconds (default 600)
 is shown as **stalled**: the process most likely crashed, was killed or ran out of quota. It doesn't

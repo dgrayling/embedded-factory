@@ -105,7 +105,8 @@ pub fn action(ev: &Event) -> Option<Action> {
         EventKind::Note { stage, text } => (stage.clone(), text.clone(), None),
         EventKind::ArtifactWritten { stage, path } => (stage.clone(), format!("Wrote {path}"), None),
         EventKind::RunFinished { ok, reason } => (String::new(), reason.clone(), Some(*ok)),
-        EventKind::Unknown => return None,
+        // A recording, not an action: the gate_result just before it already says what happened.
+        EventKind::SimTrace { .. } | EventKind::Unknown => return None,
     };
     Some(Action { ts: ev.ts, kind: kind_name(&ev.kind).into(), stage, text: clip(&text), ok })
 }
@@ -120,6 +121,7 @@ fn kind_name(k: &EventKind) -> &'static str {
         EventKind::Note { .. } => "note",
         EventKind::ArtifactWritten { .. } => "artifact_written",
         EventKind::RunFinished { .. } => "run_finished",
+        EventKind::SimTrace { .. } => "sim_trace",
         EventKind::Unknown => "unknown",
     }
 }

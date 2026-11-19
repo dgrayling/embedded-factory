@@ -76,7 +76,8 @@ def build_server(ctx: ToolContext):
         if not has_simulation(ctx.board):
             return _err(f"{ctx.board} has no Renode model; simulation unavailable")
         r = await run(firmware.simulate_all, ctx.tc, ctx.ws, ctx.board)
-        return _ok({"skipped": "no Robot suites"} if r is None else r.model_dump())
+        # Replay clips are for the dashboard; they would only crowd the persona's context.
+        return _ok({"skipped": "no Robot suites"} if r is None else r.model_dump(exclude={"clips"}))
 
     @tool("uart_log", "Boot the last build in Renode for N seconds of simulated time and return the "
           "console UART output. Use to see what the firmware actually prints.", {"seconds": float})

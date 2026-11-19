@@ -76,6 +76,15 @@ pub enum EventKind {
         #[serde(default)]
         reason: String,
     },
+    /// Per-test recordings of the simulated board (LED, button and console activity in virtual
+    /// time), emitted after a Renode gate. The dashboard folds only a count; `/sim` replays the clips.
+    SimTrace {
+        gate: String,
+        #[serde(default)]
+        iteration: u32,
+        board: String,
+        clips: Value,
+    },
     /// Forward compatibility: newer writers may emit types this build doesn't know.
     #[serde(other)]
     Unknown,
@@ -158,6 +167,8 @@ pub struct RunState {
     pub usage_by_stage: BTreeMap<String, Usage>,
     pub artifacts: Vec<String>,
     pub events: u64,
+    /// Number of `sim_trace` events: recordings available for 3D replay.
+    pub sim_traces: u32,
 }
 
 pub const GATES: [&str; 5] = ["g1", "g2", "g3", "g4", "g5"];
@@ -182,6 +193,7 @@ impl RunState {
             usage_by_stage: BTreeMap::new(),
             artifacts: Vec::new(),
             events: 0,
+            sim_traces: 0,
         }
     }
 
@@ -253,6 +265,7 @@ impl RunState {
                 self.finished_ts = Some(ev.ts);
                 self.active_stage = None;
             }
+            EventKind::SimTrace { .. } => self.sim_traces += 1,
             EventKind::ToolCall { .. } | EventKind::Note { .. } | EventKind::Unknown => {}
         }
     }
@@ -295,6 +308,7 @@ mod tests {
         assert!((st.usage.cost_usd - 0.473).abs() < 1e-9, "cost was {}", st.usage.cost_usd);
         assert_eq!(st.usage_by_stage["firmware_engineer"].input_tokens, 8200 + 9100 + 9800);
         assert!(st.active_stage.is_none());
+        assert_eq!(st.sim_traces, 2);
     }
 
     #[test]

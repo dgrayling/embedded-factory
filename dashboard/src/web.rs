@@ -34,6 +34,12 @@ const OVERVIEW_CSS: &str = include_str!("../ui/overview.css");
 const INDEX: &str = include_str!("../ui/index.html");
 const APP_JS: &str = include_str!("../ui/app.js");
 const STYLE: &str = include_str!("../ui/style.css");
+const SIM: &str = include_str!("../ui/sim.html");
+const SIM_JS: &str = include_str!("../ui/sim.js");
+const SIM_CSS: &str = include_str!("../ui/sim.css");
+// three.js r169 (MIT, see ui/vendor/THREE-LICENSE), vendored so the binary needs no network.
+const THREE_JS: &str = include_str!("../ui/vendor/three.module.min.js");
+const ORBIT_JS: &str = include_str!("../ui/vendor/OrbitControls.js");
 
 /// `loopback`: the server is bound to a loopback address, so only loopback Host headers are
 /// accepted. That stops DNS rebinding (a web page on evil.example re-pointing its name at
@@ -46,6 +52,11 @@ pub fn router(state: AppState, loopback: bool) -> Router {
         .route("/runs", get(|| async { asset("text/html; charset=utf-8", INDEX) }))
         .route("/app.js", get(|| async { asset("text/javascript; charset=utf-8", APP_JS) }))
         .route("/style.css", get(|| async { asset("text/css; charset=utf-8", STYLE) }))
+        .route("/sim", get(|| async { asset("text/html; charset=utf-8", SIM) }))
+        .route("/sim.js", get(|| async { asset("text/javascript; charset=utf-8", SIM_JS) }))
+        .route("/sim.css", get(|| async { asset("text/css; charset=utf-8", SIM_CSS) }))
+        .route("/vendor/three.module.min.js", get(|| async { vendored(THREE_JS) }))
+        .route("/vendor/OrbitControls.js", get(|| async { vendored(ORBIT_JS) }))
         .route("/api/runs", get(list_runs))
         .route("/api/runs/{id}", get(get_run))
         .route("/api/runs/{id}/state", get(get_run_state))
@@ -83,6 +94,11 @@ async fn loopback_host_only(req: Request, next: Next) -> Response {
 
 fn asset(ct: &'static str, body: &'static str) -> Response {
     ([(header::CONTENT_TYPE, ct), (header::CACHE_CONTROL, "no-cache")], body).into_response()
+}
+
+/// Third-party code that only changes with a new build: let the browser keep it for a day.
+fn vendored(body: &'static str) -> Response {
+    ([(header::CONTENT_TYPE, "text/javascript; charset=utf-8"), (header::CACHE_CONTROL, "max-age=86400")], body).into_response()
 }
 
 async fn list_runs(State(s): State<AppState>) -> impl IntoResponse {

@@ -11,6 +11,9 @@ from factory.tools import firmware
 from factory.tools.board import has_simulation
 from factory.tools.container import Toolchain
 
+# Cap on replay clips per sim_trace event, so one huge suite cannot bloat events.jsonl.
+MAX_TRACE_CLIPS = 60
+
 
 @dataclass
 class GateReport:
@@ -102,4 +105,6 @@ def run_gates(tc: Toolchain, ws: Path, board: str, budgets: dict[str, int],
             n = sum(t.passed for t in r.tests)
             record("g5", r.ok, f"{n}/{len(r.tests)} Robot tests passed",
                    {"tests": [t.model_dump() for t in r.tests], **({"log_tail": r.log_tail} if not r.ok else {})})
+            if log and r.clips:
+                log.sim_trace("g5", board, [c.model_dump() for c in r.clips[:MAX_TRACE_CLIPS]], iteration=iteration)
     return rep
